@@ -1,0 +1,1580 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Music Archive</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #080808;
+    color: #f5f5f5;
+    font-family: Arial, Helvetica, sans-serif;
+    padding-bottom: 110px;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+header {
+    padding: 35px 45px 25px;
+    border-bottom: 1px solid #222;
+    background: #090909;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.subtitle {
+    color: #777;
+    margin-top: 7px;
+    font-size: 14px;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+
+    display: flex;
+    gap: 10px;
+
+    padding: 14px 35px;
+
+    background: rgba(9, 9, 9, 0.95);
+    border-bottom: 1px solid #222;
+
+    backdrop-filter: blur(15px);
+}
+
+#search {
+    width: 350px;
+    max-width: 100%;
+
+    padding: 12px 15px;
+
+    background: #151515;
+    color: white;
+
+    border: 1px solid #333;
+    border-radius: 7px;
+
+    outline: none;
+}
+
+#search:focus {
+    border-color: #666;
+}
+
+#eraFilter,
+#favoriteFilter {
+    padding: 11px 14px;
+
+    background: #151515;
+    color: white;
+
+    border: 1px solid #333;
+    border-radius: 7px;
+
+    cursor: pointer;
+}
+
+/* =========================
+   MAIN
+========================= */
+
+.container {
+    max-width: 1450px;
+    margin: auto;
+    padding: 40px 35px 100px;
+}
+
+.stats {
+    color: #666;
+    margin-bottom: 40px;
+    font-size: 14px;
+}
+
+/* =========================
+   ERA
+========================= */
+
+.era {
+    margin-bottom: 55px;
+}
+
+.era-title {
+    font-size: 29px;
+    font-weight: 800;
+
+    padding-bottom: 14px;
+
+    border-bottom: 1px solid #292929;
+
+    margin-bottom: 5px;
+}
+
+/* =========================
+   SONG ROW
+========================= */
+
+.song {
+    display: grid;
+
+    grid-template-columns:
+        55px
+        minmax(300px, 1fr)
+        130px
+        110px
+        130px
+        90px
+        45px;
+
+    align-items: center;
+
+    min-height: 72px;
+
+    border-bottom: 1px solid #181818;
+
+    padding: 8px;
+
+    transition: background 0.15s;
+
+    cursor: pointer;
+}
+
+.song:hover {
+    background: #131313;
+}
+
+.song.playing {
+    background: #181818;
+}
+
+.number {
+    color: #555;
+    text-align: center;
+}
+
+.title {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.description {
+    color: #666;
+
+    font-size: 12px;
+
+    margin-top: 5px;
+
+    max-width: 650px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info {
+    color: #777;
+    font-size: 12px;
+}
+
+.favorite {
+    color: #555;
+    font-size: 22px;
+
+    text-align: center;
+
+    cursor: pointer;
+}
+
+.favorite.active {
+    color: white;
+}
+
+/* =========================
+   EMPTY
+========================= */
+
+.empty {
+    text-align: center;
+    padding: 100px 20px;
+
+    color: #666;
+}
+
+/* =========================
+   PLAYER
+========================= */
+
+.player {
+    position: fixed;
+
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    height: 105px;
+
+    background: rgba(12, 12, 12, 0.98);
+
+    border-top: 1px solid #292929;
+
+    z-index: 100;
+
+    display: grid;
+
+    grid-template-columns:
+        300px
+        1fr
+        180px;
+
+    align-items: center;
+
+    padding: 15px 25px;
+}
+
+.now-playing {
+    min-width: 0;
+}
+
+.now-title {
+    font-weight: 700;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.now-era {
+    color: #666;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* =========================
+   PLAYER CONTROLS
+========================= */
+
+.controls {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 18px;
+}
+
+.control {
+    border: none;
+    background: transparent;
+
+    color: white;
+
+    font-size: 19px;
+
+    cursor: pointer;
+}
+
+.play-button {
+    width: 45px;
+    height: 45px;
+
+    border-radius: 50%;
+
+    border: none;
+
+    background: white;
+    color: black;
+
+    cursor: pointer;
+
+    font-size: 17px;
+}
+
+.volume-container {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+}
+
+#volume {
+    width: 120px;
+}
+
+audio {
+    display: none;
+}
+
+/* =========================
+   PROGRESS
+========================= */
+
+.progress-container {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+
+    top: -4px;
+
+    height: 4px;
+
+    background: #252525;
+}
+
+#progress {
+    width: 100%;
+    height: 4px;
+
+    margin: 0;
+
+    appearance: none;
+
+    background: transparent;
+
+    cursor: pointer;
+}
+
+#progress::-webkit-slider-thumb {
+    appearance: none;
+
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    background: white;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width: 900px) {
+
+    .song {
+        grid-template-columns:
+            40px
+            1fr
+            45px;
+    }
+
+    .info {
+        display: none;
+    }
+
+    .player {
+        grid-template-columns:
+            1fr
+            auto;
+
+        height: 90px;
+    }
+
+    .volume-container {
+        display: none;
+    }
+
+    .controls {
+        justify-content: flex-end;
+    }
+
+}
+
+@media(max-width: 600px) {
+
+    header {
+        padding: 25px 20px;
+    }
+
+    .toolbar {
+        padding: 12px 15px;
+
+        flex-wrap: wrap;
+    }
+
+    #search {
+        width: 100%;
+    }
+
+    .container {
+        padding: 30px 15px 100px;
+    }
+
+    .era-title {
+        font-size: 24px;
+    }
+
+    .description {
+        max-width: 250px;
+    }
+
+    .player {
+        padding: 12px 15px;
+    }
+
+    .now-playing {
+        max-width: 180px;
+    }
+
+}
+</style>
+</head>
+
+<body>
+
+
+<!-- =========================
+     HEADER
+========================= -->
+
+<header>
+
+    <div class="logo">
+        MUSIC ARCHIVE
+    </div>
+
+    <div class="subtitle">
+        Unreleased music archive
+    </div>
+
+</header>
+
+
+<!-- =========================
+     SEARCH
+========================= -->
+
+<div class="toolbar">
+
+    <input
+        id="search"
+        type="text"
+        placeholder="Search songs..."
+    >
+
+    <select id="eraFilter">
+
+        <option value="all">
+            All Eras
+        </option>
+
+    </select>
+
+    <select id="favoriteFilter">
+
+        <option value="all">
+            All Songs
+        </option>
+
+        <option value="favorites">
+            ★ Favorites
+        </option>
+
+    </select>
+
+</div>
+
+
+<!-- =========================
+     LIBRARY
+========================= -->
+
+<main class="container">
+
+    <div
+        id="stats"
+        class="stats"
+    ></div>
+
+    <div
+        id="library"
+    ></div>
+
+</main>
+
+
+<!-- =========================
+     AUDIO
+========================= -->
+
+<audio id="audio"></audio>
+
+
+<!-- =========================
+     PLAYER
+========================= -->
+
+<div class="player">
+
+    <div class="progress-container">
+
+        <input
+            id="progress"
+            type="range"
+            min="0"
+            max="100"
+            value="0"
+        >
+
+    </div>
+
+
+    <div class="now-playing">
+
+        <div
+            id="nowTitle"
+            class="now-title"
+        >
+            Nothing playing
+        </div>
+
+        <div
+            id="nowEra"
+            class="now-era"
+        >
+            Select a song
+        </div>
+
+    </div>
+
+
+    <div class="controls">
+
+        <button
+            id="previous"
+            class="control"
+        >
+            ⏮
+        </button>
+
+        <button
+            id="playPause"
+            class="play-button"
+        >
+            ▶
+        </button>
+
+        <button
+            id="next"
+            class="control"
+        >
+            ⏭
+        </button>
+
+    </div>
+
+
+    <div class="volume-container">
+
+        <span>🔊</span>
+
+        <input
+            id="volume"
+            type="range"
+            min="0"
+            max="1"
+            value="1"
+            step="0.01"
+        >
+
+    </div>
+
+</div>
+
+
+<script>
+
+/*
+=========================================================
+SONG DATABASE
+=========================================================
+
+PUT YOUR AUTHORIZED MP3 URLS HERE.
+
+Each object represents one song.
+
+Example:
+
+audio:
+"https://example.com/song.mp3"
+
+The URL MUST directly return the MP3 file.
+=========================================================
+*/
+
+
+const songs = [
+
+    {
+        title: "187th",
+
+        era: "Before The College Dropout",
+
+        description:
+            "Song recorded in 1996 for Kanye's rap group The Chicago Outfit.",
+
+        duration: "2:56",
+
+        date: "Apr 22, 2009",
+
+        status: "Full",
+
+        quality: "Low Quality",
+
+        audio:
+            "YOUR_MP3_URL_HERE"
+    },
+
+
+    {
+        title: "Example Song",
+
+        era: "Before The College Dropout",
+
+        description:
+            "Replace this example with another song from your archive.",
+
+        duration: "3:21",
+
+        date: "",
+
+        status: "Full",
+
+        quality: "High Quality",
+
+        audio:
+            "YOUR_MP3_URL_HERE"
+    },
+
+
+    /*
+    ADD MORE SONGS HERE.
+
+    Example:
+
+    {
+        title: "Song Name",
+
+        era: "2003",
+
+        description: "Song description",
+
+        duration: "3:45",
+
+        date: "Jan 1, 2004",
+
+        status: "Full",
+
+        quality: "High Quality",
+
+        audio:
+            "https://your-authorized-file.mp3"
+    }
+
+    */
+
+];
+
+
+/*
+=========================================================
+STATE
+=========================================================
+*/
+
+let currentSong = null;
+
+let currentIndex = -1;
+
+let filteredSongs = [];
+
+let favorites =
+    JSON.parse(
+        localStorage.getItem(
+            "musicArchiveFavorites"
+        ) || "[]"
+    );
+
+
+const audio =
+    document.getElementById("audio");
+
+
+/*
+=========================================================
+INITIALIZE
+=========================================================
+*/
+
+populateEraFilter();
+
+render();
+
+
+/*
+=========================================================
+ERA FILTER
+=========================================================
+*/
+
+function populateEraFilter() {
+
+    const filter =
+        document.getElementById(
+            "eraFilter"
+        );
+
+
+    const eras = [
+        ...new Set(
+            songs.map(
+                song => song.era
+            )
+        )
+    ];
+
+
+    eras.forEach(
+        era => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value = era;
+
+            option.textContent = era;
+
+            filter.appendChild(
+                option
+            );
+
+        }
+    );
+}
+
+
+/*
+=========================================================
+RENDER
+=========================================================
+*/
+
+function render() {
+
+    const search =
+        document
+        .getElementById(
+            "search"
+        )
+        .value
+        .toLowerCase();
+
+
+    const selectedEra =
+        document
+        .getElementById(
+            "eraFilter"
+        )
+        .value;
+
+
+    const favoriteMode =
+        document
+        .getElementById(
+            "favoriteFilter"
+        )
+        .value;
+
+
+    filteredSongs =
+        songs.filter(
+            song => {
+
+                const matchesSearch =
+
+                    song.title
+                        .toLowerCase()
+                        .includes(search)
+
+                    ||
+
+                    song.description
+                        .toLowerCase()
+                        .includes(search)
+
+                    ||
+
+                    song.era
+                        .toLowerCase()
+                        .includes(search);
+
+
+                const matchesEra =
+
+                    selectedEra === "all"
+
+                    ||
+
+                    song.era === selectedEra;
+
+
+                const matchesFavorites =
+
+                    favoriteMode !== "favorites"
+
+                    ||
+
+                    favorites.includes(
+                        songs.indexOf(song)
+                    );
+
+
+                return (
+                    matchesSearch &&
+                    matchesEra &&
+                    matchesFavorites
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "stats"
+        )
+        .textContent =
+        `${filteredSongs.length} songs`;
+
+
+    const library =
+        document.getElementById(
+            "library"
+        );
+
+
+    library.innerHTML = "";
+
+
+    if (
+        filteredSongs.length === 0
+    ) {
+
+        library.innerHTML = `
+
+            <div class="empty">
+                No songs found.
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    /*
+       Group songs by era.
+    */
+
+    const groups = {};
+
+
+    filteredSongs.forEach(
+        song => {
+
+            if (
+                !groups[song.era]
+            ) {
+
+                groups[song.era] = [];
+            }
+
+
+            groups[song.era].push(
+                song
+            );
+
+        }
+    );
+
+
+    /*
+       Create each era section.
+    */
+
+    Object.entries(
+        groups
+    ).forEach(
+        ([era, eraSongs]) => {
+
+            const section =
+                document.createElement(
+                    "section"
+                );
+
+
+            section.className =
+                "era";
+
+
+            section.innerHTML = `
+
+                <div class="era-title">
+                    ${escapeHTML(era)}
+                </div>
+
+            `;
+
+
+            eraSongs.forEach(
+                (song, index) => {
+
+                    const originalIndex =
+                        songs.indexOf(
+                            song
+                        );
+
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    row.className =
+                        "song";
+
+
+                    if (
+                        currentSong === song &&
+                        !audio.paused
+                    ) {
+
+                        row.classList.add(
+                            "playing"
+                        );
+
+                    }
+
+
+                    row.onclick =
+                        () => {
+
+                            playSong(
+                                song
+                            );
+
+                        };
+
+
+                    const isFavorite =
+                        favorites.includes(
+                            originalIndex
+                        );
+
+
+                    row.innerHTML = `
+
+                        <div class="number">
+                            ${index + 1}
+                        </div>
+
+
+                        <div>
+
+                            <div class="title">
+                                ${escapeHTML(
+                                    song.title
+                                )}
+                            </div>
+
+                            <div class="description">
+                                ${escapeHTML(
+                                    song.description
+                                )}
+                            </div>
+
+                        </div>
+
+
+                        <div class="info">
+                            ${escapeHTML(
+                                song.date
+                            )}
+                        </div>
+
+
+                        <div class="info">
+                            ${escapeHTML(
+                                song.status
+                            )}
+                        </div>
+
+
+                        <div class="info">
+                            ${escapeHTML(
+                                song.quality
+                            )}
+                        </div>
+
+
+                        <div class="info">
+                            ${escapeHTML(
+                                song.duration
+                            )}
+                        </div>
+
+
+                        <div
+                            class="favorite ${
+                                isFavorite
+                                    ? "active"
+                                    : ""
+                            }"
+                        >
+                            ${
+                                isFavorite
+                                    ? "★"
+                                    : "☆"
+                            }
+                        </div>
+
+                    `;
+
+
+                    /*
+                       Favorite button needs
+                       its own click event.
+                    */
+
+                    row
+                        .querySelector(
+                            ".favorite"
+                        )
+                        .onclick =
+                        event => {
+
+                            event.stopPropagation();
+
+                            toggleFavorite(
+                                originalIndex
+                            );
+
+                        };
+
+
+                    section.appendChild(
+                        row
+                    );
+
+                }
+            );
+
+
+            library.appendChild(
+                section
+            );
+
+        }
+    );
+}
+
+
+/*
+=========================================================
+PLAY SONG
+=========================================================
+*/
+
+function playSong(song) {
+
+    const index =
+        songs.indexOf(
+            song
+        );
+
+
+    if (
+        !song.audio ||
+        song.audio === "YOUR_MP3_URL_HERE"
+    ) {
+
+        alert(
+            "This song does not have an MP3 URL yet."
+        );
+
+        return;
+    }
+
+
+    currentSong =
+        song;
+
+    currentIndex =
+        index;
+
+
+    audio.pause();
+
+
+    audio.src =
+        song.audio;
+
+
+    audio.load();
+
+
+    document
+        .getElementById(
+            "nowTitle"
+        )
+        .textContent =
+        song.title;
+
+
+    document
+        .getElementById(
+            "nowEra"
+        )
+        .textContent =
+        song.era;
+
+
+    audio.play()
+        .then(
+            () => {
+
+                document
+                    .getElementById(
+                        "playPause"
+                    )
+                    .textContent =
+                    "❚❚";
+
+                render();
+
+            }
+        )
+        .catch(
+            error => {
+
+                console.error(
+                    error
+                );
+
+
+                alert(
+                    "The MP3 could not be played. Check that the URL directly points to an MP3 file and allows browser access."
+                );
+
+            }
+        );
+}
+
+
+/*
+=========================================================
+PLAY / PAUSE
+=========================================================
+*/
+
+document
+    .getElementById(
+        "playPause"
+    )
+    .onclick =
+    () => {
+
+        if (
+            !audio.src
+        ) {
+
+            if (
+                songs.length
+            ) {
+
+                playSong(
+                    songs[0]
+                );
+
+            }
+
+            return;
+        }
+
+
+        if (
+            audio.paused
+        ) {
+
+            audio.play();
+
+        } else {
+
+            audio.pause();
+
+        }
+
+    };
+
+
+/*
+=========================================================
+AUDIO EVENTS
+=========================================================
+*/
+
+audio.addEventListener(
+    "play",
+    () => {
+
+        document
+            .getElementById(
+                "playPause"
+            )
+            .textContent =
+            "❚❚";
+
+        render();
+
+    }
+);
+
+
+audio.addEventListener(
+    "pause",
+    () => {
+
+        document
+            .getElementById(
+                "playPause"
+            )
+            .textContent =
+            "▶";
+
+        render();
+
+    }
+);
+
+
+audio.addEventListener(
+    "ended",
+    () => {
+
+        nextSong();
+
+    }
+);
+
+
+/*
+=========================================================
+NEXT
+=========================================================
+*/
+
+function nextSong() {
+
+    if (
+        songs.length === 0
+    ) {
+        return;
+    }
+
+
+    let nextIndex =
+        currentIndex + 1;
+
+
+    if (
+        nextIndex >= songs.length
+    ) {
+
+        nextIndex = 0;
+
+    }
+
+
+    playSong(
+        songs[nextIndex]
+    );
+}
+
+
+/*
+=========================================================
+PREVIOUS
+=========================================================
+*/
+
+function previousSong() {
+
+    if (
+        songs.length === 0
+    ) {
+        return;
+    }
+
+
+    let previousIndex =
+        currentIndex - 1;
+
+
+    if (
+        previousIndex < 0
+    ) {
+
+        previousIndex =
+            songs.length - 1;
+
+    }
+
+
+    playSong(
+        songs[previousIndex]
+    );
+}
+
+
+document
+    .getElementById(
+        "next"
+    )
+    .onclick =
+    nextSong;
+
+
+document
+    .getElementById(
+        "previous"
+    )
+    .onclick =
+    previousSong;
+
+
+/*
+=========================================================
+PROGRESS
+=========================================================
+*/
+
+audio.addEventListener(
+    "timeupdate",
+    () => {
+
+        if (
+            !audio.duration
+        ) {
+            return;
+        }
+
+
+        const progress =
+            (
+                audio.currentTime /
+                audio.duration
+            ) * 100;
+
+
+        document
+            .getElementById(
+                "progress"
+            )
+            .value =
+            progress;
+
+    }
+);
+
+
+document
+    .getElementById(
+        "progress"
+    )
+    .addEventListener(
+        "input",
+        function() {
+
+            if (
+                !audio.duration
+            ) {
+                return;
+            }
+
+
+            audio.currentTime =
+                (
+                    this.value /
+                    100
+                ) *
+                audio.duration;
+
+        }
+    );
+
+
+/*
+=========================================================
+VOLUME
+=========================================================
+*/
+
+document
+    .getElementById(
+        "volume"
+    )
+    .addEventListener(
+        "input",
+        function() {
+
+            audio.volume =
+                this.value;
+
+        }
+    );
+
+
+/*
+=========================================================
+FAVORITES
+=========================================================
+*/
+
+function toggleFavorite(index) {
+
+    const position =
+        favorites.indexOf(
+            index
+        );
+
+
+    if (
+        position === -1
+    ) {
+
+        favorites.push(
+            index
+        );
+
+    } else {
+
+        favorites.splice(
+            position,
+            1
+        );
+
+    }
+
+
+    localStorage.setItem(
+        "musicArchiveFavorites",
+        JSON.stringify(
+            favorites
+        )
+    );
+
+
+    render();
+}
+
+
+/*
+=========================================================
+FILTER EVENTS
+=========================================================
+*/
+
+document
+    .getElementById(
+        "search"
+    )
+    .addEventListener(
+        "input",
+        render
+    );
+
+
+document
+    .getElementById(
+        "eraFilter"
+    )
+    .addEventListener(
+        "change",
+        render
+    );
+
+
+document
+    .getElementById(
+        "favoriteFilter"
+    )
+    .addEventListener(
+        "change",
+        render
+    );
+
+
+/*
+=========================================================
+HTML ESCAPING
+=========================================================
+*/
+
+function escapeHTML(value) {
+
+    return String(
+        value || ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
+}
+
+</script>
+
+</body>
+</html>
+```
