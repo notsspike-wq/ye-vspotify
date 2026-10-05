@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>UNVAULTED Archive</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background: #080808;
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+        overflow-x: hidden;
+    }
+
+    /* TOP BAR */
+
+    header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        height: 72px;
+        background: rgba(8,8,8,.94);
+        backdrop-filter: blur(15px);
+        border-bottom: 1px solid #222;
+        display: flex;
+        align-items: center;
+        padding: 0 30px;
+    }
+
+    .logo {
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        margin-right: 40px;
+    }
+
+    .search {
+        flex: 1;
+        max-width: 500px;
+    }
+
+    .search input {
+        width: 100%;
+        background: #151515;
+        border: 1px solid #292929;
+        color: white;
+        border-radius: 8px;
+        padding: 12px 16px;
+        outline: none;
+        font-size: 14px;
+    }
+
+    .search input:focus {
+        border-color: #666;
+    }
+
+    /* IMPORT */
+
+    .import-area {
+        max-width: 900px;
+        margin: 70px auto 50px;
+        padding: 0 25px;
+        text-align: center;
+    }
+
+    .import-area h1 {
+        font-size: 45px;
+        margin-bottom: 10px;
+        letter-spacing: -2px;
+    }
+
+    .import-area p {
+        color: #999;
+        margin-bottom: 30px;
+    }
+
+    .sheet-box {
+        display: flex;
+        gap: 10px;
+        max-width: 750px;
+        margin: auto;
+    }
+
+    .sheet-box input {
+        flex: 1;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #333;
+        background: #111;
+        color: white;
+        outline: none;
+    }
+
+    button {
+        background: white;
+        color: black;
+        border: none;
+        border-radius: 8px;
+        padding: 0 22px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #ccc;
+    }
+
+    .status {
+        margin-top: 15px;
+        color: #777;
+        font-size: 14px;
+    }
+
+    /* ARCHIVE */
+
+    #archive {
+        max-width: 1400px;
+        margin: auto;
+        padding: 0 30px 180px;
+    }
+
+    .era {
+        margin-bottom: 60px;
+    }
+
+    .era-title {
+        display: flex;
+        align-items: baseline;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .era-title h2 {
+        font-size: 28px;
+        margin: 0;
+    }
+
+    .era-title span {
+        color: #777;
+        font-size: 13px;
+    }
+
+    .songs {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 18px;
+    }
+
+    .song {
+        background: #111;
+        border: 1px solid #1e1e1e;
+        border-radius: 10px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform .15s, background .15s;
+    }
+
+    .song:hover {
+        transform: translateY(-4px);
+        background: #181818;
+    }
+
+    .cover {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        background: #202020;
+        display: block;
+    }
+
+    .song-info {
+        padding: 13px;
+    }
+
+    .song-name {
+        font-weight: bold;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .song-date {
+        margin-top: 6px;
+        color: #777;
+        font-size: 12px;
+    }
+
+    /* PLAYER */
+
+    #player {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 92px;
+        background: rgba(13,13,13,.97);
+        border-top: 1px solid #292929;
+        display: none;
+        align-items: center;
+        padding: 12px 25px;
+        z-index: 200;
+        backdrop-filter: blur(20px);
+    }
+
+    #player.active {
+        display: flex;
+    }
+
+    .player-cover {
+        width: 65px;
+        height: 65px;
+        border-radius: 5px;
+        object-fit: cover;
+        background: #222;
+    }
+
+    .player-info {
+        width: 230px;
+        padding-left: 15px;
+    }
+
+    .player-title {
+        font-weight: bold;
+    }
+
+    .player-era {
+        color: #777;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    audio {
+        flex: 1;
+        margin-left: 20px;
+    }
+
+    .close-player {
+        margin-left: 20px;
+        color: #aaa;
+        cursor: pointer;
+        font-size: 20px;
+    }
+
+    .close-player:hover {
+        color: white;
+    }
+
+    /* EMPTY */
+
+    .empty {
+        text-align: center;
+        color: #666;
+        padding: 80px 0;
+    }
+
+    /* MOBILE */
+
+    @media(max-width: 700px) {
+
+        header {
+            padding: 0 15px;
+        }
+
+        .logo {
+            font-size: 17px;
+            margin-right: 15px;
+        }
+
+        .import-area h1 {
+            font-size: 32px;
+        }
+
+        .sheet-box {
+            flex-direction: column;
+        }
+
+        .sheet-box button {
+            height: 45px;
+        }
+
+        #archive {
+            padding: 0 15px 180px;
+        }
+
+        .songs {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        #player {
+            height: 85px;
+            padding: 10px;
+        }
+
+        .player-cover {
+            width: 55px;
+            height: 55px;
+        }
+
+        .player-info {
+            width: 130px;
+            padding-left: 10px;
+        }
+
+        audio {
+            margin-left: 5px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<header>
+
+    <div class="logo">
+        UNVAULTED
+    </div>
+
+    <div class="search">
+        <input
+            id="searchInput"
+            type="text"
+            placeholder="Search songs..."
+            oninput="searchSongs()"
+        >
+    </div>
+
+</header>
+
+
+<section class="import-area">
+
+    <h1>Music Archive</h1>
+
+    <p>
+        Import a Google Sheet to build your archive.
+    </p>
+
+    <div class="sheet-box">
+
+        <input
+            id="sheetURL"
+            type="text"
+            placeholder="Paste Google Sheets link..."
+        >
+
+        <button onclick="loadSheet()">
+            IMPORT
+        </button>
+
+    </div>
+
+    <div id="status" class="status">
+        No archive loaded.
+    </div>
+
+</section>
+
+
+<main id="archive">
+
+    <div class="empty">
+        Import a Google Sheet to begin.
+    </div>
+
+</main>
+
+
+<!-- PLAYER -->
+
+<div id="player">
+
+    <img
+        id="playerCover"
+        class="player-cover"
+        src=""
+        alt=""
+    >
+
+    <div class="player-info">
+
+        <div
+            id="playerTitle"
+            class="player-title"
+        >
+            Nothing playing
+        </div>
+
+        <div
+            id="playerEra"
+            class="player-era"
+        >
+            —
+        </div>
+
+    </div>
+
+    <audio
+        id="audioPlayer"
+        controls
+    ></audio>
+
+    <div
+        class="close-player"
+        onclick="closePlayer()"
+    >
+        ×
+    </div>
+
+</div>
+
+
+<script>
+
+let songs = [];
+
+
+/* --------------------------------
+   GOOGLE SHEETS URL CONVERTER
+-------------------------------- */
+
+function convertGoogleSheetURL(url) {
+
+    /*
+        Supports URLs like:
+
+        https://docs.google.com/spreadsheets/d/ID/edit
+
+        and converts them into:
+
+        https://docs.google.com/spreadsheets/d/ID/gviz/tq?tqx=out:csv
+    */
+
+    const match = url.match(
+        /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/
+    );
+
+    if (!match) {
+        throw new Error(
+            "That doesn't look like a Google Sheets URL."
+        );
+    }
+
+    const spreadsheetID = match[1];
+
+    return `https://docs.google.com/spreadsheets/d/${spreadsheetID}/gviz/tq?tqx=out:csv`;
+}
+
+
+/* --------------------------------
+   CSV PARSER
+-------------------------------- */
+
+function parseCSV(text) {
+
+    const rows = [];
+
+    let row = [];
+    let value = "";
+    let insideQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"' && insideQuotes && next === '"') {
+
+            value += '"';
+            i++;
+
+        } else if (char === '"') {
+
+            insideQuotes = !insideQuotes;
+
+        } else if (char === ',' && !insideQuotes) {
+
+            row.push(value);
+            value = "";
+
+        } else if (
+            (char === '\n' || char === '\r') &&
+            !insideQuotes
+        ) {
+
+            if (char === '\r' && next === '\n') {
+                i++;
+            }
+
+            row.push(value);
+
+            rows.push(row);
+
+            row = [];
+            value = "";
+
+        } else {
+
+            value += char;
+
+        }
+    }
+
+    if (value.length || row.length) {
+
+        row.push(value);
+        rows.push(row);
+
+    }
+
+    return rows;
+}
+
+
+/* --------------------------------
+   LOAD GOOGLE SHEET
+-------------------------------- */
+
+async function loadSheet() {
+
+    const url =
+        document.getElementById("sheetURL").value.trim();
+
+    const status =
+        document.getElementById("status");
+
+    if (!url) {
+
+        status.textContent =
+            "Paste a Google Sheets link first.";
+
+        return;
+    }
+
+    status.textContent =
+        "Loading archive...";
+
+    try {
+
+        const csvURL =
+            convertGoogleSheetURL(url);
+
+        const response =
+            await fetch(csvURL);
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Could not access the spreadsheet."
+            );
+
+        }
+
+        const csv =
+            await response.text();
+
+        const rows =
+            parseCSV(csv);
+
+        if (rows.length < 2) {
+
+            throw new Error(
+                "The spreadsheet appears to be empty."
+            );
+
+        }
+
+        const headers =
+            rows[0].map(
+                h => h.trim().toLowerCase()
+            );
+
+        songs = [];
+
+        for (let i = 1; i < rows.length; i++) {
+
+            const row = rows[i];
+
+            if (
+                row.every(
+                    cell => !cell.trim()
+                )
+            ) {
+                continue;
+            }
+
+            const item = {};
+
+            headers.forEach((header, index) => {
+
+                item[header] =
+                    row[index]
+                    ? row[index].trim()
+                    : "";
+
+            });
+
+            songs.push(item);
+        }
+
+        renderArchive(songs);
+
+        status.textContent =
+            `Loaded ${songs.length} songs.`;
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Error: " + error.message;
+
+    }
+}
+
+
+/* --------------------------------
+   FIND COLUMN
+-------------------------------- */
+
+function getValue(song, names) {
+
+    for (const name of names) {
+
+        if (
+            song[name] !== undefined &&
+            song[name] !== ""
+        ) {
+
+            return song[name];
+
+        }
+    }
+
+    return "";
+}
+
+
+/* --------------------------------
+   RENDER ARCHIVE
+-------------------------------- */
+
+function renderArchive(data) {
+
+    const archive =
+        document.getElementById("archive");
+
+    archive.innerHTML = "";
+
+    if (!data.length) {
+
+        archive.innerHTML =
+            `<div class="empty">
+                No songs found.
+             </div>`;
+
+        return;
+    }
+
+
+    /* GROUP SONGS BY ERA */
+
+    const eras = {};
+
+    data.forEach(song => {
+
+        const era =
+            getValue(song, [
+                "era",
+                "period",
+                "album era",
+                "section"
+            ]) || "Other";
+
+        if (!eras[era]) {
+            eras[era] = [];
+        }
+
+        eras[era].push(song);
+
+    });
+
+
+    /* CREATE ERA SECTIONS */
+
+    Object.keys(eras).forEach(eraName => {
+
+        const eraSection =
+            document.createElement("section");
+
+        eraSection.className =
+            "era";
+
+
+        const title =
+            document.createElement("div");
+
+        title.className =
+            "era-title";
+
+
+        const heading =
+            document.createElement("h2");
+
+        heading.textContent =
+            eraName;
+
+
+        const count =
+            document.createElement("span");
+
+        count.textContent =
+            `${eras[eraName].length} songs`;
+
+
+        title.appendChild(heading);
+        title.appendChild(count);
+
+
+        const grid =
+            document.createElement("div");
+
+        grid.className =
+            "songs";
+
+
+        eras[eraName].forEach(song => {
+
+            grid.appendChild(
+                createSongCard(song, eraName)
+            );
+
+        });
+
+
+        eraSection.appendChild(title);
+        eraSection.appendChild(grid);
+
+        archive.appendChild(eraSection);
+
+    });
+
+}
+
+
+/* --------------------------------
+   CREATE SONG CARD
+-------------------------------- */
+
+function createSongCard(song, era) {
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "song";
+
+
+    const cover =
+        getValue(song, [
+            "cover",
+            "image",
+            "art",
+            "thumbnail"
+        ]);
+
+
+    const title =
+        getValue(song, [
+            "song",
+            "title",
+            "name",
+            "track"
+        ]) || "Untitled";
+
+
+    const date =
+        getValue(song, [
+            "date",
+            "year"
+        ]);
+
+
+    card.innerHTML = `
+
+        <img
+            class="cover"
+            src="${escapeHTML(cover)}"
+            onerror="this.style.visibility='hidden'"
+        >
+
+        <div class="song-info">
+
+            <div class="song-name">
+                ${escapeHTML(title)}
+            </div>
+
+            <div class="song-date">
+                ${escapeHTML(date || era)}
+            </div>
+
+        </div>
+
+    `;
+
+
+    card.onclick = () => {
+
+        playSong(song, era);
+
+    };
+
+
+    return card;
+}
+
+
+/* --------------------------------
+   PLAY SONG
+-------------------------------- */
+
+function playSong(song, era) {
+
+    const audio =
+        getValue(song, [
+            "audio",
+            "audio url",
+            "url",
+            "mp3",
+            "file"
+        ]);
+
+
+    const title =
+        getValue(song, [
+            "song",
+            "title",
+            "name",
+            "track"
+        ]) || "Untitled";
+
+
+    const cover =
+        getValue(song, [
+            "cover",
+            "image",
+            "art",
+            "thumbnail"
+        ]);
+
+
+    if (!audio) {
+
+        alert(
+            "This song doesn't have an audio URL."
+        );
+
+        return;
+    }
+
+
+    const player =
+        document.getElementById("player");
+
+    const audioPlayer =
+        document.getElementById("audioPlayer");
+
+
+    document.getElementById(
+        "playerTitle"
+    ).textContent = title;
+
+
+    document.getElementById(
+        "playerEra"
+    ).textContent = era;
+
+
+    document.getElementById(
+        "playerCover"
+    ).src = cover || "";
+
+
+    audioPlayer.src = audio;
+
+    player.classList.add("active");
+
+    audioPlayer.play().catch(() => {});
+
+}
+
+
+/* --------------------------------
+   CLOSE PLAYER
+-------------------------------- */
+
+function closePlayer() {
+
+    const player =
+        document.getElementById("player");
+
+    const audio =
+        document.getElementById("audioPlayer");
+
+    audio.pause();
+
+    audio.src = "";
+
+    player.classList.remove("active");
+
+}
+
+
+/* --------------------------------
+   SEARCH
+-------------------------------- */
+
+function searchSongs() {
+
+    const query =
+        document.getElementById(
+            "searchInput"
+        ).value.toLowerCase().trim();
+
+
+    if (!query) {
+
+        renderArchive(songs);
+
+        return;
+    }
+
+
+    const filtered =
+        songs.filter(song => {
+
+            return Object.values(song)
+                .join(" ")
+                .toLowerCase()
+                .includes(query);
+
+        });
+
+
+    renderArchive(filtered);
+
+}
+
+
+/* --------------------------------
+   HTML ESCAPE
+-------------------------------- */
+
+function escapeHTML(value) {
+
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+</script>
+
+</body>
+</html>
