@@ -1,0 +1,2231 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Archive</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #080808;
+    color: #eee;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+header {
+    padding: 28px 40px;
+    border-bottom: 1px solid #222;
+    background: #0b0b0b;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.subtitle {
+    color: #777;
+    margin-top: 6px;
+}
+
+#import {
+    max-width: 900px;
+    margin: 80px auto;
+    padding: 25px;
+}
+
+#import h1 {
+    font-size: 42px;
+    margin-bottom: 8px;
+}
+
+#import p {
+    color: #888;
+}
+
+.input-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+#sheetURL {
+    flex: 1;
+    background: #151515;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 7px;
+    padding: 15px;
+    outline: none;
+}
+
+#load {
+    background: white;
+    color: black;
+    border: 0;
+    border-radius: 7px;
+    padding: 0 25px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#error {
+    color: #ff6565;
+    margin-top: 15px;
+}
+
+#app {
+    display: none;
+}
+
+.toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+
+    display: flex;
+    gap: 10px;
+
+    padding: 14px 30px;
+
+    background: rgba(10,10,10,.96);
+    border-bottom: 1px solid #222;
+
+    backdrop-filter: blur(15px);
+}
+
+#search {
+    width: 400px;
+    max-width: 100%;
+
+    background: #151515;
+    color: white;
+
+    border: 1px solid #333;
+    border-radius: 7px;
+
+    padding: 11px;
+    outline: none;
+}
+
+#eraFilter {
+    background: #151515;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 7px;
+    padding: 10px;
+}
+
+#favorites {
+    background: #151515;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 7px;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+#favorites.active {
+    background: #333;
+}
+
+.content {
+    max-width: 1450px;
+    margin: auto;
+    padding: 40px 30px 150px;
+}
+
+.stats {
+    color: #777;
+    margin-bottom: 35px;
+}
+
+.era {
+    margin-bottom: 55px;
+}
+
+.era-title {
+    font-size: 30px;
+    font-weight: 800;
+    margin-bottom: 16px;
+}
+
+.song {
+    display: grid;
+
+    grid-template-columns:
+        55px
+        minmax(300px, 1fr)
+        120px
+        120px
+        120px
+        120px
+        45px;
+
+    align-items: center;
+
+    min-height: 70px;
+
+    border-bottom: 1px solid #191919;
+
+    padding: 8px;
+
+    cursor: pointer;
+
+    transition: background .15s;
+}
+
+.song:hover {
+    background: #141414;
+}
+
+.song.playing {
+    background: #1b1b1b;
+}
+
+.number {
+    color: #555;
+    text-align: center;
+}
+
+.song-title {
+    font-weight: 700;
+}
+
+.song-description {
+    color: #777;
+    font-size: 12px;
+
+    margin-top: 5px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info {
+    color: #777;
+    font-size: 13px;
+}
+
+.favorite {
+    font-size: 21px;
+    color: #555;
+    cursor: pointer;
+}
+
+.favorite.active {
+    color: white;
+}
+
+/* PLAYER */
+
+#player {
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: 105px;
+
+    display: none;
+    align-items: center;
+
+    padding: 15px 25px;
+
+    background: rgba(12,12,12,.98);
+
+    border-top: 1px solid #292929;
+
+    z-index: 100;
+}
+
+#nowPlaying {
+    width: 330px;
+    min-width: 0;
+}
+
+#nowTitle {
+    font-weight: bold;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#nowEra {
+    color: #777;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.controls {
+    flex: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 20px;
+}
+
+.control {
+    border: 0;
+    background: none;
+    color: white;
+    font-size: 21px;
+    cursor: pointer;
+}
+
+#playPause {
+    width: 45px;
+    height: 45px;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: white;
+    color: black;
+
+    cursor: pointer;
+}
+
+#volume {
+    width: 130px;
+}
+
+#progress {
+    position: absolute;
+
+    top: -4px;
+    left: 0;
+    right: 0;
+
+    width: 100%;
+    height: 4px;
+
+    appearance: none;
+
+    background: #333;
+
+    cursor: pointer;
+}
+
+.empty {
+    color: #777;
+    text-align: center;
+    padding: 80px;
+}
+
+@media(max-width:900px) {
+
+    .song {
+        grid-template-columns:
+            40px
+            1fr
+            50px;
+    }
+
+    .info {
+        display: none;
+    }
+
+    #player {
+        height: 90px;
+    }
+
+    #nowPlaying {
+        width: 180px;
+    }
+
+    #volume {
+        display: none;
+    }
+}
+
+@media(max-width:650px) {
+
+    .input-row {
+        flex-direction: column;
+    }
+
+    #load {
+        height: 50px;
+    }
+
+    .toolbar {
+        flex-wrap: wrap;
+    }
+
+    #search {
+        width: 100%;
+    }
+
+    #nowPlaying {
+        width: 140px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">MUSIC ARCHIVE</div>
+    <div class="subtitle">Unreleased music archive</div>
+</header>
+
+
+<!-- IMPORT -->
+
+<section id="import">
+
+    <h1>Import Archive</h1>
+
+    <p>
+        Paste your Google Sheets link.
+    </p>
+
+    <div class="input-row">
+
+        <input
+            id="sheetURL"
+            placeholder="https://docs.google.com/spreadsheets/d/..."
+        >
+
+        <button id="load">
+            LOAD
+        </button>
+
+    </div>
+
+    <div id="error"></div>
+
+</section>
+
+
+<!-- APP -->
+
+<div id="app">
+
+    <div class="toolbar">
+
+        <input
+            id="search"
+            placeholder="Search songs..."
+        >
+
+        <select id="eraFilter">
+            <option value="all">
+                All Eras
+            </option>
+        </select>
+
+        <button id="favorites">
+            ★ Favorites
+        </button>
+
+    </div>
+
+
+    <main class="content">
+
+        <div id="stats" class="stats"></div>
+
+        <div id="library"></div>
+
+    </main>
+
+</div>
+
+
+<!-- PLAYER -->
+
+<div id="player">
+
+    <audio id="audio"></audio>
+
+    <input
+        id="progress"
+        type="range"
+        min="0"
+        max="100"
+        value="0"
+    >
+
+    <div id="nowPlaying">
+
+        <div id="nowTitle">
+            Nothing playing
+        </div>
+
+        <div id="nowEra"></div>
+
+    </div>
+
+
+    <div class="controls">
+
+        <button
+            class="control"
+            id="previous"
+        >
+            ⏮
+        </button>
+
+        <button id="playPause">
+            ▶
+        </button>
+
+        <button
+            class="control"
+            id="next"
+        >
+            ⏭
+        </button>
+
+    </div>
+
+
+    <input
+        id="volume"
+        type="range"
+        min="0"
+        max="1"
+        value="1"
+        step="0.01"
+    >
+
+</div>
+
+
+<script>
+
+/* =========================================
+   GLOBAL DATA
+========================================= */
+
+let songs = [];
+let filteredSongs = [];
+
+let currentSongIndex = -1;
+
+let favoriteIDs = [];
+
+let favoritesOnly = false;
+
+const audio =
+    document.getElementById("audio");
+
+
+/* =========================================
+   GOOGLE SHEETS URL
+========================================= */
+
+function makeCSVURL(sheetURL) {
+
+    /*
+       Extract spreadsheet ID.
+    */
+
+    const match =
+        sheetURL.match(
+            /\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/
+        );
+
+    if (!match) {
+        throw new Error(
+            "That isn't a valid Google Sheets URL."
+        );
+    }
+
+    const spreadsheetID =
+        match[1];
+
+
+    /*
+       Extract gid if supplied.
+    */
+
+    const gidMatch =
+        sheetURL.match(
+            /[?&#]gid=([0-9]+)/
+        );
+
+
+    const gid =
+        gidMatch
+        ? gidMatch[1]
+        : "0";
+
+
+    return (
+        "https://docs.google.com/" +
+        "spreadsheets/d/" +
+        spreadsheetID +
+        "/gviz/tq?" +
+        "tqx=out:csv&gid=" +
+        gid
+    );
+}
+
+
+/* =========================================
+   CSV PARSER
+========================================= */
+
+function parseCSV(text) {
+
+    const rows = [];
+
+    let row = [];
+    let cell = "";
+
+    let quoted = false;
+
+
+    for (
+        let i = 0;
+        i < text.length;
+        i++
+    ) {
+
+        const char =
+            text[i];
+
+
+        if (char === '"') {
+
+            if (
+                quoted &&
+                text[i + 1] === '"'
+            ) {
+
+                cell += '"';
+
+                i++;
+
+            } else {
+
+                quoted =
+                    !quoted;
+            }
+
+        }
+
+        else if (
+            char === "," &&
+            !quoted
+        ) {
+
+            row.push(cell);
+
+            cell = "";
+
+        }
+
+        else if (
+            (char === "\n" ||
+             char === "\r") &&
+            !quoted
+        ) {
+
+            if (
+                char === "\r" &&
+                text[i + 1] === "\n"
+            ) {
+                i++;
+            }
+
+
+            row.push(cell);
+
+
+            if (
+                row.some(
+                    value =>
+                        value.trim() !== ""
+                )
+            ) {
+
+                rows.push(row);
+            }
+
+
+            row = [];
+            cell = "";
+
+        }
+
+        else {
+
+            cell += char;
+        }
+    }
+
+
+    if (
+        cell !== "" ||
+        row.length
+    ) {
+
+        row.push(cell);
+
+        if (
+            row.some(
+                value =>
+                    value.trim() !== ""
+            )
+        ) {
+
+            rows.push(row);
+        }
+    }
+
+
+    return rows;
+}
+
+
+/* =========================================
+   CLEAN TEXT
+========================================= */
+
+function clean(value) {
+
+    return String(
+        value || ""
+    )
+    .replace(
+        /<br\s*\/?>/gi,
+        " "
+    )
+    .replace(
+        /\*\*/g,
+        ""
+    )
+    .replace(
+        /\*/g,
+        ""
+    )
+    .trim();
+}
+
+
+/* =========================================
+   EXTRACT URL
+========================================= */
+
+function extractURL(value) {
+
+    if (!value)
+        return "";
+
+
+    const text =
+        String(value).trim();
+
+
+    /*
+       Markdown:
+
+       [text](https://...)
+    */
+
+    const markdown =
+        text.match(
+            /\]\((https?:\/\/[^)]+)\)/
+        );
+
+    if (markdown) {
+        return markdown[1];
+    }
+
+
+    /*
+       Plain URL
+    */
+
+    const url =
+        text.match(
+            /https?:\/\/[^\s\]\)]+/
+        );
+
+    if (url) {
+
+        return url[0]
+            .replace(
+                /[.,;]+$/,
+                ""
+            );
+    }
+
+
+    return "";
+}
+
+
+/* =========================================
+   DETECT AUDIO URL
+========================================= */
+
+function findAudio(row) {
+
+    /*
+       First look from RIGHT TO LEFT.
+
+       Your example has the audio/link
+       near the end of the row.
+    */
+
+    for (
+        let i = row.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const url =
+            extractURL(
+                row[i]
+            );
+
+
+        if (url) {
+
+            return url;
+        }
+    }
+
+
+    return "";
+}
+
+
+/* =========================================
+   FIND SONG TITLE
+========================================= */
+
+function findSongTitle(row) {
+
+    /*
+       Your example:
+
+       3
+       Before The College Dropout
+       187th
+       Song description...
+       2:56
+       Apr 22, 2009
+       Full
+       Low Quality
+       audio URL
+
+       Therefore:
+
+       Ignore the first numeric column.
+
+       The first substantial text after
+       the era is normally the song title.
+    */
+
+
+    for (
+        let i = 0;
+        i < row.length;
+        i++
+    ) {
+
+        const value =
+            clean(row[i]);
+
+
+        if (!value)
+            continue;
+
+
+        /*
+           Skip row numbers.
+        */
+
+        if (
+            /^\d+$/.test(value)
+        ) {
+            continue;
+        }
+
+
+        /*
+           Skip obvious dates.
+        */
+
+        if (
+            /\b(19|20)\d{2}\b/.test(
+                value
+            ) &&
+            (
+                value.includes("/") ||
+                value.includes("-") ||
+                value.includes(" ")
+            )
+        ) {
+            continue;
+        }
+
+
+        /*
+           Skip durations.
+        */
+
+        if (
+            /^\d{1,2}:\d{2}$/.test(
+                value
+            )
+        ) {
+            continue;
+        }
+
+
+        /*
+           Skip statuses.
+        */
+
+        if (
+            /^(full|partial|snippet|unavailable|tagged|stem bounce|low quality|high quality)$/i
+                .test(value)
+        ) {
+            continue;
+        }
+
+
+        /*
+           Skip URLs.
+        */
+
+        if (
+            /^https?:\/\//i.test(
+                value
+            )
+        ) {
+            continue;
+        }
+
+
+        /*
+           The second substantial field
+           is normally the song.
+
+           We skip the first text field
+           because that is the era.
+        */
+
+        return value;
+    }
+
+
+    return "Untitled";
+}
+
+
+/* =========================================
+   FIND ERA
+========================================= */
+
+function findEra(row) {
+
+    /*
+       Your archive structure puts the era
+       immediately before the song title.
+
+       Usually:
+
+       [number]
+       [era]
+       [song]
+       [description]
+       ...
+    */
+
+
+    for (
+        let i = 0;
+        i < row.length;
+        i++
+    ) {
+
+        const value =
+            clean(row[i]);
+
+
+        if (!value)
+            continue;
+
+
+        /*
+           Skip row number.
+        */
+
+        if (
+            /^\d+$/.test(value)
+        ) {
+            continue;
+        }
+
+
+        /*
+           The first substantial text
+           field is the era.
+        */
+
+        return value;
+    }
+
+
+    return "Unknown Era";
+}
+
+
+/* =========================================
+   FIND DESCRIPTION
+========================================= */
+
+function findDescription(
+    row,
+    title
+) {
+
+    const titleIndex =
+        row.findIndex(
+            value =>
+                clean(value) ===
+                clean(title)
+        );
+
+
+    if (
+        titleIndex !== -1 &&
+        row[titleIndex + 1]
+    ) {
+
+        const description =
+            clean(
+                row[
+                    titleIndex + 1
+                ]
+            );
+
+
+        if (
+            description &&
+            !extractURL(
+                description
+            ) &&
+            !/^\d{1,2}:\d{2}$/.test(
+                description
+            )
+        ) {
+
+            return description;
+        }
+    }
+
+
+    return "";
+}
+
+
+/* =========================================
+   BUILD ARCHIVE
+========================================= */
+
+function buildArchive(rows) {
+
+    /*
+       The first row in your spreadsheet
+       may actually be a header/era summary.
+
+       We don't force a header structure.
+
+       Instead we analyze every row.
+    */
+
+
+    songs = [];
+
+
+    rows.forEach(
+        (row, index) => {
+
+            const cleaned =
+                row.map(
+                    value =>
+                        clean(value)
+                );
+
+
+            if (
+                cleaned.every(
+                    value => !value
+                )
+            ) {
+                return;
+            }
+
+
+            /*
+               Find URL.
+            */
+
+            const audioURL =
+                findAudio(
+                    row
+                );
+
+
+            /*
+               If there is no URL,
+               this may be an era/header
+               row rather than a song.
+            */
+
+            if (!audioURL) {
+
+                return;
+            }
+
+
+            /*
+               Find song title.
+            */
+
+            const title =
+                findSongTitle(
+                    row
+                );
+
+
+            /*
+               Find era.
+            */
+
+            const era =
+                findEra(
+                    row
+                );
+
+
+            /*
+               Description.
+            */
+
+            const description =
+                findDescription(
+                    row,
+                    title
+                );
+
+
+            /*
+               Duration.
+            */
+
+            let duration = "";
+
+            for (
+                const value of cleaned
+            ) {
+
+                if (
+                    /^\d{1,2}:\d{2}$/.test(
+                        value
+                    )
+                ) {
+
+                    duration =
+                        value;
+
+                    break;
+                }
+            }
+
+
+            /*
+               Status.
+            */
+
+            let status = "";
+
+            for (
+                const value of cleaned
+            ) {
+
+                if (
+                    /^(full|partial|snippet|unavailable|tagged|stem bounce)$/i
+                        .test(value)
+                ) {
+
+                    status =
+                        value;
+
+                    break;
+                }
+            }
+
+
+            /*
+               Quality.
+            */
+
+            let quality = "";
+
+            for (
+                const value of cleaned
+            ) {
+
+                if (
+                    /quality/i.test(
+                        value
+                    )
+                ) {
+
+                    quality =
+                        value;
+
+                    break;
+                }
+            }
+
+
+            /*
+               Date.
+
+               We look for something that
+               resembles a date.
+            */
+
+            let date = "";
+
+            for (
+                const value of cleaned
+            ) {
+
+                if (
+                    /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}\b/i
+                        .test(value)
+                ) {
+
+                    date =
+                        value;
+
+                    break;
+                }
+            }
+
+
+            songs.push({
+
+                id:
+                    songs.length,
+
+                era,
+
+                title,
+
+                description,
+
+                duration,
+
+                date,
+
+                status,
+
+                quality,
+
+                audio:
+                    audioURL,
+
+                originalRow:
+                    index + 1
+            });
+        }
+    );
+
+
+    /*
+       Show application.
+    */
+
+    document
+        .getElementById(
+            "import"
+        )
+        .style.display =
+        "none";
+
+
+    document
+        .getElementById(
+            "app"
+        )
+        .style.display =
+        "block";
+
+
+    populateEras();
+
+    render();
+}
+
+
+/* =========================================
+   LOAD SHEET
+========================================= */
+
+async function loadSheet() {
+
+    const input =
+        document
+        .getElementById(
+            "sheetURL"
+        );
+
+
+    const error =
+        document
+        .getElementById(
+            "error"
+        );
+
+
+    error.textContent = "";
+
+
+    if (!input.value.trim()) {
+
+        error.textContent =
+            "Paste your Google Sheets link.";
+
+        return;
+    }
+
+
+    try {
+
+        const csvURL =
+            makeCSVURL(
+                input.value.trim()
+            );
+
+
+        const response =
+            await fetch(
+                csvURL
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Google Sheets request failed."
+            );
+        }
+
+
+        const text =
+            await response.text();
+
+
+        const rows =
+            parseCSV(
+                text
+            );
+
+
+        if (
+            rows.length === 0
+        ) {
+
+            throw new Error(
+                "No rows found."
+            );
+        }
+
+
+        localStorage.setItem(
+            "archiveSheet",
+            input.value.trim()
+        );
+
+
+        buildArchive(
+            rows
+        );
+
+
+    } catch (err) {
+
+        console.error(
+            err
+        );
+
+
+        error.textContent =
+            "Couldn't read the Google Sheet. Make sure it is publicly accessible or published to the web.";
+    }
+}
+
+
+/* =========================================
+   ERA FILTER
+========================================= */
+
+function populateEras() {
+
+    const select =
+        document
+        .getElementById(
+            "eraFilter"
+        );
+
+
+    select.innerHTML =
+        `<option value="all">
+            All Eras
+        </option>`;
+
+
+    const eras =
+        [
+            ...new Set(
+                songs.map(
+                    song =>
+                        song.era
+                )
+            )
+        ];
+
+
+    eras.forEach(
+        era => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                era;
+
+
+            option.textContent =
+                era;
+
+
+            select.appendChild(
+                option
+            );
+        }
+    );
+}
+
+
+/* =========================================
+   RENDER
+========================================= */
+
+function render() {
+
+    const search =
+        document
+        .getElementById(
+            "search"
+        )
+        .value
+        .toLowerCase();
+
+
+    const era =
+        document
+        .getElementById(
+            "eraFilter"
+        )
+        .value;
+
+
+    filteredSongs =
+        songs.filter(
+            song => {
+
+                const matchesSearch =
+                    !search ||
+                    song.title
+                        .toLowerCase()
+                        .includes(
+                            search
+                        ) ||
+                    song.description
+                        .toLowerCase()
+                        .includes(
+                            search
+                        ) ||
+                    song.era
+                        .toLowerCase()
+                        .includes(
+                            search
+                        );
+
+
+                const matchesEra =
+                    era === "all" ||
+                    song.era === era;
+
+
+                const matchesFavorites =
+                    !favoritesOnly ||
+                    favoriteIDs.includes(
+                        song.id
+                    );
+
+
+                return (
+                    matchesSearch &&
+                    matchesEra &&
+                    matchesFavorites
+                );
+            }
+        );
+
+
+    document
+        .getElementById(
+            "stats"
+        )
+        .textContent =
+        `${filteredSongs.length} songs`;
+
+
+    const library =
+        document
+        .getElementById(
+            "library"
+        );
+
+
+    library.innerHTML = "";
+
+
+    if (
+        filteredSongs.length === 0
+    ) {
+
+        library.innerHTML =
+            `<div class="empty">
+                No songs found.
+            </div>`;
+
+        return;
+    }
+
+
+    /*
+       Group by era.
+    */
+
+    const groups = {};
+
+
+    filteredSongs.forEach(
+        song => {
+
+            if (
+                !groups[song.era]
+            ) {
+
+                groups[song.era] =
+                    [];
+            }
+
+
+            groups[song.era].push(
+                song
+            );
+        }
+    );
+
+
+    Object.entries(
+        groups
+    ).forEach(
+        ([era, eraSongs]) => {
+
+            const section =
+                document.createElement(
+                    "section"
+                );
+
+
+            section.className =
+                "era";
+
+
+            const heading =
+                document.createElement(
+                    "div"
+                );
+
+
+            heading.className =
+                "era-title";
+
+
+            heading.textContent =
+                era;
+
+
+            section.appendChild(
+                heading
+            );
+
+
+            eraSongs.forEach(
+                (song, index) => {
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    row.className =
+                        "song";
+
+
+                    if (
+                        currentSongIndex ===
+                            song.id &&
+                        !audio.paused
+                    ) {
+
+                        row.classList.add(
+                            "playing"
+                        );
+                    }
+
+
+                    row.onclick =
+                        () =>
+                        playSong(
+                            song
+                        );
+
+
+                    const favorite =
+                        favoriteIDs.includes(
+                            song.id
+                        );
+
+
+                    row.innerHTML = `
+
+                        <div class="number">
+                            ${index + 1}
+                        </div>
+
+                        <div>
+
+                            <div class="song-title">
+                                ${escapeHTML(
+                                    song.title
+                                )}
+                            </div>
+
+                            <div class="song-description">
+                                ${escapeHTML(
+                                    song.description
+                                )}
+                            </div>
+
+                        </div>
+
+                        <div class="info">
+                            ${escapeHTML(
+                                song.date
+                            )}
+                        </div>
+
+                        <div class="info">
+                            ${escapeHTML(
+                                song.status
+                            )}
+                        </div>
+
+                        <div class="info">
+                            ${escapeHTML(
+                                song.quality
+                            )}
+                        </div>
+
+                        <div class="info">
+                            ${escapeHTML(
+                                song.duration
+                            )}
+                        </div>
+
+                        <div
+                            class="favorite ${
+                                favorite
+                                ? "active"
+                                : ""
+                            }"
+                            onclick="
+                                toggleFavorite(
+                                    ${song.id},
+                                    event
+                                )
+                            "
+                        >
+                            ${
+                                favorite
+                                ? "★"
+                                : "☆"
+                            }
+                        </div>
+                    `;
+
+
+                    section.appendChild(
+                        row
+                    );
+                }
+            );
+
+
+            library.appendChild(
+                section
+            );
+        }
+    );
+}
+
+
+/* =========================================
+   PLAY SONG
+========================================= */
+
+function playSong(song) {
+
+    const index =
+        songs.findIndex(
+            item =>
+                item.id === song.id
+        );
+
+
+    if (index === -1)
+        return;
+
+
+    currentSongIndex =
+        index;
+
+
+    const url =
+        song.audio;
+
+
+    if (!url) {
+
+        alert(
+            "This row does not contain an audio URL."
+        );
+
+        return;
+    }
+
+
+    /*
+       IMPORTANT:
+
+       The URL is passed directly to
+       the browser's audio element.
+    */
+
+    audio.pause();
+
+    audio.src = url;
+
+    audio.load();
+
+
+    document
+        .getElementById(
+            "player"
+        )
+        .style.display =
+        "flex";
+
+
+    document
+        .getElementById(
+            "nowTitle"
+        )
+        .textContent =
+        song.title;
+
+
+    document
+        .getElementById(
+            "nowEra"
+        )
+        .textContent =
+        song.era;
+
+
+    audio.play()
+        .then(
+            () => {
+
+                document
+                    .getElementById(
+                        "playPause"
+                    )
+                    .textContent =
+                    "❚❚";
+
+                render();
+            }
+        )
+        .catch(
+            error => {
+
+                console.error(
+                    error
+                );
+
+
+                document
+                    .getElementById(
+                        "playPause"
+                    )
+                    .textContent =
+                    "▶";
+
+
+                alert(
+                    "The song was found, but your browser could not play the audio URL. The link needs to point directly to playable audio and allow browser access."
+                );
+            }
+        );
+}
+
+
+/* =========================================
+   PLAY / PAUSE
+========================================= */
+
+document
+    .getElementById(
+        "playPause"
+    )
+    .onclick =
+    () => {
+
+        if (!audio.src)
+            return;
+
+
+        if (
+            audio.paused
+        ) {
+
+            audio.play();
+
+        } else {
+
+            audio.pause();
+        }
+    };
+
+
+/* =========================================
+   AUDIO EVENTS
+========================================= */
+
+audio.addEventListener(
+    "play",
+    () => {
+
+        document
+            .getElementById(
+                "playPause"
+            )
+            .textContent =
+            "❚❚";
+
+        render();
+    }
+);
+
+
+audio.addEventListener(
+    "pause",
+    () => {
+
+        document
+            .getElementById(
+                "playPause"
+            )
+            .textContent =
+            "▶";
+
+        render();
+    }
+);
+
+
+audio.addEventListener(
+    "ended",
+    () => {
+
+        nextSong();
+    }
+);
+
+
+/* =========================================
+   NEXT / PREVIOUS
+========================================= */
+
+function nextSong() {
+
+    if (
+        filteredSongs.length === 0
+    )
+        return;
+
+
+    let index =
+        filteredSongs.findIndex(
+            song =>
+                song.id ===
+                currentSongIndex
+        );
+
+
+    index++;
+
+
+    if (
+        index >=
+        filteredSongs.length
+    ) {
+
+        index = 0;
+    }
+
+
+    playSong(
+        filteredSongs[index]
+    );
+}
+
+
+function previousSong() {
+
+    if (
+        filteredSongs.length === 0
+    )
+        return;
+
+
+    let index =
+        filteredSongs.findIndex(
+            song =>
+                song.id ===
+                currentSongIndex
+        );
+
+
+    index--;
+
+
+    if (index < 0) {
+
+        index =
+            filteredSongs.length - 1;
+    }
+
+
+    playSong(
+        filteredSongs[index]
+    );
+}
+
+
+document
+    .getElementById(
+        "next"
+    )
+    .onclick =
+    nextSong;
+
+
+document
+    .getElementById(
+        "previous"
+    )
+    .onclick =
+    previousSong;
+
+
+/* =========================================
+   PROGRESS
+========================================= */
+
+audio.addEventListener(
+    "timeupdate",
+    () => {
+
+        if (
+            !audio.duration
+        )
+            return;
+
+
+        document
+            .getElementById(
+                "progress"
+            )
+            .value =
+            (
+                audio.currentTime /
+                audio.duration
+            ) * 100;
+    }
+);
+
+
+document
+    .getElementById(
+        "progress"
+    )
+    .addEventListener(
+        "input",
+        function() {
+
+            if (
+                !audio.duration
+            )
+                return;
+
+
+            audio.currentTime =
+                (
+                    this.value /
+                    100
+                ) *
+                audio.duration;
+        }
+    );
+
+
+/* =========================================
+   VOLUME
+========================================= */
+
+document
+    .getElementById(
+        "volume"
+    )
+    .addEventListener(
+        "input",
+        function() {
+
+            audio.volume =
+                this.value;
+        }
+    );
+
+
+/* =========================================
+   FAVORITES
+========================================= */
+
+function loadFavorites() {
+
+    try {
+
+        favoriteIDs =
+            JSON.parse(
+                localStorage.getItem(
+                    "archiveFavorites"
+                )
+            ) || [];
+
+    } catch {
+
+        favoriteIDs = [];
+    }
+}
+
+
+function toggleFavorite(
+    id,
+    event
+) {
+
+    event.stopPropagation();
+
+
+    if (
+        favoriteIDs.includes(id)
+    ) {
+
+        favoriteIDs =
+            favoriteIDs.filter(
+                value =>
+                    value !== id
+            );
+
+    } else {
+
+        favoriteIDs.push(id);
+    }
+
+
+    localStorage.setItem(
+        "archiveFavorites",
+        JSON.stringify(
+            favoriteIDs
+        )
+    );
+
+
+    render();
+}
+
+
+document
+    .getElementById(
+        "favorites"
+    )
+    .onclick =
+    function() {
+
+        favoritesOnly =
+            !favoritesOnly;
+
+
+        this.classList.toggle(
+            "active",
+            favoritesOnly
+        );
+
+
+        render();
+    };
+
+
+loadFavorites();
+
+
+/* =========================================
+   SEARCH / FILTER
+========================================= */
+
+document
+    .getElementById(
+        "search"
+    )
+    .addEventListener(
+        "input",
+        render
+    );
+
+
+document
+    .getElementById(
+        "eraFilter"
+    )
+    .addEventListener(
+        "change",
+        render
+    );
+
+
+/* =========================================
+   HTML ESCAPE
+========================================= */
+
+function escapeHTML(value) {
+
+    return String(
+        value || ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+}
+
+
+/* =========================================
+   REMEMBER SHEET
+========================================= */
+
+const savedSheet =
+    localStorage.getItem(
+        "archiveSheet"
+    );
+
+
+if (savedSheet) {
+
+    document
+        .getElementById(
+            "sheetURL"
+        )
+        .value =
+        savedSheet;
+}
+
+
+/* =========================================
+   LOAD BUTTON
+========================================= */
+
+document
+    .getElementById(
+        "load"
+    )
+    .onclick =
+    loadSheet;
+
+</script>
+
+</body>
+</html>
+```
