@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --accent: #1db954;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            max-width: 1000px;
+            margin-inline: auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .loading {
+            text-align: center;
+            color: var(--accent);
+            font-size: 1.2em;
+            margin-top: 50px;
+        }
+        .era-section {
+            margin-bottom: 40px;
+        }
+        .era-title {
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .song-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .song-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .song-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+        }
+        .song-credits {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            margin: 0;
+        }
+        .song-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.85em;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .detail-item {
+            background: rgba(0,0,0,0.4);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .audio-player {
+            width: 100%;
+            height: 40px;
+            margin-top: 5px;
+        }
+        .controls-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+        .link-btn {
+            background-color: var(--accent);
+            color: #000;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .link-btn:hover {
+            opacity: 0.9;
+        }
+        .unavailable {
+            color: #ff4444;
+            font-style: italic;
+            font-size: 0.9em;
+            padding: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Music Tracker</h1>
+    </div>
+
+    <div id="loading" class="loading">Loading songs from Google Sheets...</div>
+    <div id="tracker-container"></div>
+
+    <script>
+        const SHEET_ID = '1shKl9S-r5d1vgzYGSEyWflyyn0LS_AKJ7Ydjsczbb0Y';
+        const GID = '34972268';
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            Papa.parse(sheetUrl, {
+                download: true,
+                header: false,
+                complete: function(results) {
+                    document.getElementById('loading').style.display = 'none';
+                    const data = results.data.slice(1);
+                    processData(data);
+                },
+                error: function(error) {
+                    document.getElementById('loading').textContent = 'Error loading data. Make sure the Google Sheet is set to "Anyone with the link can view".';
+                }
+            });
+        });
+
+        // This function converts viewing links into direct audio/video streams so the browser can play them
+        function makePlayableUrl(url) {
+            if (!url) return null;
+            let cleanUrl = url.trim();
+
+            // Handle Imgur links (Converts imgur.com/XYZ to i.imgur.com/XYZ.mp4)
+            if (cleanUrl.includes('imgur.com') && !cleanUrl.includes('i.imgur.com') && !cleanUrl.includes('/a/')) {
+                const idMatch = cleanUrl.match(/imgur\.com\/([a-zA-Z0-9]+)$/);
+                if (idMatch && idMatch[1]) {
+                    return `https://i.imgur.com/${idMatch[1]}.mp4`; // Imgur audio uploads are formatted as mp4s
+                }
+            }
+
+            // Handle Google Drive links (Converts view links to direct download streams)
+            if (cleanUrl.includes('drive.google.com/file/d/')) {
+                const match = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    return `https://docs.google.com/uc?export=download&id=${match[1]}`;
+                }
+            }
+
+            return cleanUrl;
+        }
+
+        function processData(data) {
+            const eras = {};
+
+            data.forEach(row => {
+                if (!row || row.length < 2 || !row[0] || row[0].trim() === '') return;
+
+                const era = row[0].trim();
+                const songTitleCell = row[1] ? row[1].trim() : 'Unknown';
+                
+                if (!eras[era]) eras[era] = [];
+
+                let originalLink = null;
+                let details = [];
+
+                for (let i = 2; i < row.length; i++) {
+                    const cell = row[i] ? row[i].trim() : '';
+                    if (!cell) continue;
+
+                    // Check if cell is a URL
+                    if (cell.startsWith('http') || cell.includes('://') || cell.endsWith('.mp3') || cell.endsWith('.mp4') || cell.includes('imgur.com')) {
+                        // Ensure it has https:// if they just pasted "imgur.com/..."
+                        originalLink = cell.startsWith('http') ? cell : 'https://' + cell;
+                    } else {
+                        details.push(cell);
+                    }
+                }
+
+                eras[era].push({
+                    title: songTitleCell,
+                    details: details,
+                    link: originalLink,
+                    playableLink: makePlayableUrl(originalLink)
+                });
+            });
+
+            renderTracker(eras);
+        }
+
+        function renderTracker(eras) {
+            const container = document.getElementById('tracker-container');
+            container.innerHTML = ''; 
+
+            if (Object.keys(eras).length === 0) {
+                container.innerHTML = '<p style="text-align:center;">No valid data found in the spreadsheet.</p>';
+                return;
+            }
+
+            const sortedEras = Object.keys(eras);
+
+            sortedEras.forEach(eraName => {
+                const section = document.createElement('div');
+                section.className = 'era-section';
+                
+                const title = document.createElement('h2');
+                title.className = 'era-title';
+                title.textContent = eraName;
+                section.appendChild(title);
+
+                eras[eraName].forEach(song => {
+                    const card = document.createElement('div');
+                    card.className = 'song-card';
+
+                    const titleParts = song.title.split('\n');
+                    const mainTitle = titleParts[0];
+                    const credits = titleParts.slice(1).join(' | ');
+
+                    let html = `
+                        <div class="song-header">
+                            <div>
+                                <p class="song-title">${mainTitle}</p>
+                                ${credits ? `<p class="song-credits">${credits}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+
+                    if (song.details.length > 0) {
+                        html += `<div class="song-details">`;
+                        song.details.forEach(detail => {
+                            html += `<span class="detail-item">${detail}</span>`;
+                        });
+                        html += `</div>`;
+                    }
+
+                    if (song.link) {
+                        html += `
+                            <div class="controls-container">
+                                <audio class="audio-player" controls preload="none">
+                                    <!-- Use the converted playable link for the audio element -->
+                                    <source src="${song.playableLink}">
+                                </audio>
+                                <!-- Keep the original link for the external button -->
+                                <a href="${song.link}" target="_blank" class="link-btn">Open Link ↗</a>
+                            </div>
+                        `;
+                    } else {
+                        html += `<div class="unavailable">No Link Available</div>`;
+                    }
+
+                    card.innerHTML = html;
+                    section.appendChild(card);
+                });
+
+                container.appendChild(section);
+            });
+        }
+    </script>
+</body>
+</html>
